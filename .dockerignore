@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+.git/
+public/data/
+public/index.html
+public/assets/
+tests/__pycache__/

@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+public/data/
+public/index.html
+public/assets/
+web/assets/*-key.png
+web/assets/mascot-kickers*.png

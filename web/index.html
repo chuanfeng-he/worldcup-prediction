@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>绿茵神噜</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23073b32'/%3E%3Cpath d='M8 8h16v16H8z' fill='%23fcfbf7'/%3E%3Cpath d='M11 14h10M11 18h7' stroke='%23d64a2f' stroke-width='2'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/assets/styles.css?v=20260703-5" />
+  </head>
+  <body>
+    <header class="terminal-head">
+      <div class="head-grid">
+        <div class="brand-block">
+          <p class="eyebrow" data-i18n="appKicker">竞彩复盘与过关测算</p>
+          <h1 data-i18n="appName">绿茵神噜</h1>
+          <p class="head-copy" data-i18n="headCopy">北京时间赛程、体彩销售快照、赛果复盘和混合过关收益测算。</p>
+          <div class="head-actions" aria-label="语言切换">
+            <button class="active" data-lang="zh" type="button">中文</button>
+            <button data-lang="en" type="button">EN</button>
+          </div>
+        </div>
+        <img class="football-art" src="/assets/football-terminal.svg?v=20260703-5" alt="足球场和足球示意图" />
+      </div>
+      <div class="status-strip" id="statusStrip">
+        <span data-i18n="loading">加载数据中</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="forecast-board">
+        <div class="date-ticket">
+          <p class="eyebrow" data-i18n="todayTicketKicker">今日比赛 · 北京时间</p>
+          <strong id="todayDate">----</strong>
+          <span id="todaySummary" data-i18n="todayLoading">今日未赛比赛加载中</span>
+        </div>
+        <div class="track-card">
+          <div>
+            <p class="eyebrow" data-i18n="trackKicker">模型轨选择</p>
+            <h2 id="trackTitle">综合轨</h2>
+            <p id="trackDesc">综合轨会把独立模型和市场快照做有限校准。</p>
+          </div>
+          <div class="segmented" role="tablist" aria-label="预测轨道">
+            <button class="active" data-track="accuracy" type="button" data-i18n="trackAccuracyTitle">综合轨</button>
+            <button data-track="independent" type="button" data-i18n="trackIndependentTitle">独立轨</button>
+          </div>
+        </div>
+        <div class="recommend-rail">
+          <div class="rail-head">
+            <h2 id="recommendTitle">下一待赛日三项候选</h2>
+            <p data-i18n="researchOnly">研究用途，不构成投注建议</p>
+          </div>
+          <div class="recommend-grid" id="recommendGrid"></div>
+        </div>
+      </section>
+
+      <section class="panel today-panel">
+        <div class="panel-head">
+          <h2 data-i18n="todayReviewTitle">今日赛果复盘</h2>
+          <p id="todayReviewSummary" data-i18n="loadingShort">加载中</p>
+        </div>
+        <div class="daily-grid" id="dailyGrid"></div>
+      </section>
+
+      <section class="panel tomorrow-panel">
+        <div class="panel-head">
+          <h2 data-i18n="pendingTitle">待赛比赛预测</h2>
+          <p id="tomorrowSummary" data-i18n="loadingShort">加载中</p>
+        </div>
+        <div class="tomorrow-grid" id="tomorrowGrid"></div>
+      </section>
+
+      <section class="slip-panel" id="slipPanel">
+        <div class="slip-head">
+          <div>
+            <p class="eyebrow" data-i18n="manualKicker">人工选择</p>
+            <h2 data-i18n="calculatorTitle">独立玩法计算器</h2>
+          </div>
+          <label class="stake-input">
+            <span data-i18n="stakePerBet">单注金额</span>
+            <input id="stakeInput" type="number" min="0" step="1" value="2" />
+          </label>
+        </div>
+        <div class="slip-body">
+          <div class="betting-workspace">
+            <div class="bet-controls">
+              <label class="match-select">
+                <span data-i18n="pendingMatch">未赛比赛</span>
+                <select id="slipMatchSelect"></select>
+              </label>
+              <div class="market-tabs" id="marketTabs"></div>
+            </div>
+            <div class="option-grid" id="optionGrid"></div>
+            <div class="selected-list" id="selectedList">
+              <p class="empty-state" data-i18n="selectionEmptyShort">在上方选择未赛比赛和玩法后，这里会计算命中概率和预计收益。</p>
+            </div>
+          </div>
+          <div class="slip-summary">
+            <div><span data-i18n="betCount">注数</span><strong id="slipCount">0</strong></div>
+            <div><span data-i18n="matchCount">场次数</span><strong id="slipMatchCount">0</strong></div>
+            <div><span data-i18n="hitRate">成功率</span><strong id="slipHitRate">0.0%</strong></div>
+            <div><span data-i18n="totalStake">总本金</span><strong id="slipStakeTotal">0.00</strong></div>
+            <div><span data-i18n="maxReturn">最高返还</span><strong id="slipPayout">0.00</strong></div>
+            <div><span data-i18n="expectedProfit">预计收益</span><strong id="slipReturn">0.00</strong></div>
+            <div class="slip-mode-cell"><span data-i18n="betMode">投注方式</span><strong id="slipMode" data-i18n="notSelected">未选择</strong></div>
+          </div>
+        </div>
+        <p class="slip-note" data-i18n="slipNote">注数按各场选项数相乘；总本金 = 单注金额 × 注数；最高返还取所有组合里可能固定奖金最高的一注；预计收益按组合概率加权估算。</p>
+      </section>
+
+      <section class="terminal-toolbar" aria-label="赛程检索">
+        <div class="toolbar-title">
+          <p class="eyebrow" data-i18n="scheduleKicker">赛程纵览</p>
+          <strong data-i18n="allMatches">全部比赛</strong>
+        </div>
+        <label class="search">
+          <span data-i18n="searchLabel">检索</span>
+          <input id="matchSearch" type="search" placeholder="球队、小组、日期" data-i18n-placeholder="searchPlaceholder" />
+        </label>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel matches-panel">
+          <div class="panel-head">
+              <h2 data-i18n="allScheduleTitle">全部赛程（北京时间）</h2>
+            <p id="matchCount">--</p>
+          </div>
+          <div class="match-list" id="matchList"></div>
+        </div>
+
+        <aside class="side-stack">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 data-i18n="historyTitle">历史命中率</h2>
+              <p id="historyMeta">--</p>
+            </div>
+            <div class="history-grid" id="historyGrid"></div>
+          </section>
+
+          <section class="panel champions-panel">
+            <div class="panel-head">
+              <h2 data-i18n="championTitle">冠军概率</h2>
+              <p id="simMeta">--</p>
+            </div>
+            <div class="champion-list" id="championList"></div>
+          </section>
+        </aside>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <span data-i18n="footerDisclaimer">模型输出仅用于研究复盘，不保证赛果，不构成投注建议。</span>
+      <span data-i18n="footerData">数据包含模型生成结果和手工录入的体彩销售快照。</span>
+    </footer>
+
+    <script src="/assets/app.js?v=20260703-5" type="module"></script>
+  </body>
+</html>
