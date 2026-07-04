@@ -33,6 +33,29 @@ def _goal(team_id, minute, display):
     }
 
 
+def _scheduled_event(event_id, date, home_team_id, home, away_team_id, away):
+    return {
+        "id": event_id,
+        "date": date,
+        "season": {"slug": "round-of-16"},
+        "competitions": [
+            {
+                "status": {
+                    "type": {
+                        "name": "STATUS_SCHEDULED",
+                        "completed": False,
+                        "shortDetail": "Scheduled",
+                    }
+                },
+                "competitors": [
+                    _competitor(home_team_id, home, "home", 0),
+                    _competitor(away_team_id, away, "away", 0),
+                ],
+            }
+        ],
+    }
+
+
 def test_apply_live_results_uses_regulation_score_for_lottery_settlement():
     seed = load_seed_data()
     payload = {
@@ -113,6 +136,143 @@ def test_apply_live_results_uses_regulation_score_for_lottery_settlement():
     assert argentina["live_result"]["settlement_basis"] == "regulation_90"
     assert argentina["live_result"]["final_score"] == {"home_goals": 3, "away_goals": 2}
     assert argentina["live_result"]["advance"] == "ARG"
+
+
+def test_apply_live_results_appends_known_espn_scheduled_fixtures():
+    seed = load_seed_data()
+    payload = {
+        "events": [
+            _scheduled_event("760502", "2026-07-04T17:00Z", "206", "CAN", "2869", "MAR"),
+            _scheduled_event("760503", "2026-07-04T21:00Z", "210", "PAR", "478", "FRA"),
+        ]
+    }
+
+    updated, report = apply_live_results(seed, fetcher=lambda date: payload, now_iso="2026-07-04T02:00:00Z")
+
+    canada = next(item for item in updated.fixtures if item["match_id"] == "ESPN-760502")
+    france = next(item for item in updated.fixtures if item["match_id"] == "ESPN-760503")
+
+    assert report["appended_count"] == 2
+    assert canada["stage"] == "16强"
+    assert canada["home"] == "CAN"
+    assert canada["away"] == "MAR"
+    assert canada["kickoff"] == "2026-07-05T01:00:00+08:00"
+    assert canada["completed"] is False
+    assert france["home"] == "PAR"
+    assert france["away"] == "FRA"
+    assert france["kickoff"] == "2026-07-05T05:00:00+08:00"
+
+
+def test_generated_daily_predictions_use_appended_future_fixtures(tmp_path):
+    seed = load_seed_data()
+    payload = {
+        "events": [
+            {
+                "id": "760499",
+                "date": "2026-07-03T18:00Z",
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_FINAL_PEN", "completed": True, "shortDetail": "FT-Pens"}},
+                        "competitors": [
+                            _competitor("628", "AUS", "home", 1, shootout_score=2),
+                            _competitor("2620", "EGY", "away", 1, winner=True, advance=True, shootout_score=4),
+                        ],
+                        "details": [
+                            _goal("2620", 13, "13'"),
+                            _goal("628", 55, "55'"),
+                        ],
+                    }
+                ],
+            },
+            {
+                "id": "760500",
+                "date": "2026-07-03T22:00Z",
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_FINAL_AET", "completed": True, "shortDetail": "AET"}},
+                        "competitors": [
+                            _competitor("202", "ARG", "home", 3, winner=True, advance=True),
+                            _competitor("2597", "CPV", "away", 2),
+                        ],
+                        "details": [
+                            _goal("202", 29, "29'"),
+                            _goal("2597", 59, "59'"),
+                            _goal("202", 92, "92'"),
+                            _goal("2597", 103, "103'"),
+                            _goal("202", 111, "111'"),
+                        ],
+                    }
+                ],
+            },
+            {
+                "id": "760501",
+                "date": "2026-07-04T01:30Z",
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_FINAL", "completed": True, "shortDetail": "FT"}},
+                        "competitors": [
+                            _competitor("208", "COL", "home", 2, winner=True, advance=True),
+                            _competitor("4469", "GHA", "away", 0),
+                        ],
+                        "details": [
+                            _goal("208", 14, "14'"),
+                            _goal("208", 74, "74'"),
+                        ],
+                    }
+                ],
+            },
+            _scheduled_event("760502", "2026-07-04T17:00Z", "206", "CAN", "2869", "MAR"),
+            _scheduled_event("760503", "2026-07-04T21:00Z", "210", "PAR", "478", "FRA"),
+        ]
+    }
+
+    updated, report = apply_live_results(seed, fetcher=lambda date: payload, now_iso="2026-07-04T02:00:00Z")
+    generate_public_data(updated, tmp_path, n_sims=50, seed=11, live_result_report=report)
+
+    daily = json.loads((tmp_path / "daily_predictions.json").read_text())
+    pairs = {(item["home"]["name"], item["away"]["name"]) for item in daily["matches"]}
+
+    assert daily["as_of_date"] == "2026-07-04"
+    assert daily["target_date"] == "2026-07-05"
+    assert pairs == {("加拿大", "摩洛哥"), ("巴拉圭", "法国")}
+
+
+def test_completed_auto_appended_espn_fixture_stays_in_daily_review(tmp_path):
+    seed = load_seed_data()
+    payload = {
+        "events": [
+            {
+                "id": "760502",
+                "date": "2026-07-04T17:00Z",
+                "season": {"slug": "round-of-16"},
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_FINAL", "completed": True, "shortDetail": "FT"}},
+                        "competitors": [
+                            _competitor("206", "CAN", "home", 1, winner=True, advance=True),
+                            _competitor("2869", "MAR", "away", 0),
+                        ],
+                        "details": [
+                            _goal("206", 31, "31'"),
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    updated, report = apply_live_results(seed, fetcher=lambda date: payload, now_iso="2026-07-04T18:30:00Z")
+    generate_public_data(updated, tmp_path, n_sims=50, seed=11, live_result_report=report)
+
+    daily = json.loads((tmp_path / "daily_predictions.json").read_text())
+    canada = next(item for item in daily["today_completed"] if item["match_id"] == "ESPN-760502")
+
+    assert daily["as_of_date"] == "2026-07-05"
+    assert canada["home"]["name"] == "加拿大"
+    assert canada["away"]["name"] == "摩洛哥"
+    assert canada["result"]["home_goals"] == 1
+    assert canada["result"]["away_goals"] == 0
+    assert canada["live_result"]["settlement_basis"] == "regulation_90"
 
 
 def test_generated_json_exposes_live_final_score_and_settlement_score(tmp_path):

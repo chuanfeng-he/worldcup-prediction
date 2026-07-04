@@ -1,6 +1,6 @@
 # 绿茵神噜 / Green Pitch Luloo
 
-离线优先的世界杯预测与竞彩玩法测算网页。项目内置样例赛程、球队强度、赛果、市场快照和体彩销售快照；运行时先生成静态 JSON，浏览器只读取本地文件。默认模式不调用外部接口；如果启用自动赛果更新，生成器会在后台拉取 ESPN 公共 scoreboard 数据并重新生成静态 JSON。
+离线优先的世界杯预测与竞彩玩法测算网页。项目内置样例赛程、球队强度、赛果、市场快照和体彩销售快照；运行时先生成静态 JSON，浏览器只读取本地文件。默认模式不调用外部接口；如果启用自动赛程/赛果更新，生成器会在后台拉取 ESPN 公共 scoreboard 数据并重新生成静态 JSON。
 
 ![绿茵神噜主界面](docs/assets/home.png)
 
@@ -10,7 +10,7 @@
 - 展示待赛比赛预测、今日赛果复盘、全部赛程、历史命中率、冠军概率。
 - 覆盖中国体彩竞彩足球常见玩法：胜平负、让球胜平负、比分、总进球、半全场。
 - 独立玩法计算器支持同场多选、跨场混合过关、单注金额、注数、命中概率、最高返还和预计收益估算。
-- 默认完全本地运行，适合个人电脑克隆后直接部署；服务器部署可开启定时自动赛果更新。
+- 默认完全本地运行，适合个人电脑克隆后直接部署；服务器部署可开启定时自动赛程/赛果更新。
 
 ## 一键本地运行
 
@@ -59,9 +59,9 @@ python3 -m wcmodel.cli generate --sims 5000 --seed 2026
 python3 -m wcmodel.cli serve --host 127.0.0.1 --port 8080
 ```
 
-## 自动赛果更新
+## 自动赛程/赛果更新
 
-默认 `make generate` 只使用本地快照，结果稳定且可离线复现。需要自动更新赛果时，使用：
+默认 `make generate` 只使用本地快照，结果稳定且可离线复现。需要自动更新赛程和赛果时，使用：
 
 ```bash
 python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn
@@ -103,11 +103,11 @@ sudo systemctl enable --now worldcup-prediction-update.timer
 - 市场概率快照：用于综合轨的有限校准。
 - 体彩销售快照：用于让球、开售状态、单场/过关规则和票面赔率展示。
 
-这些数据都在本地代码中。自动赛果更新模式只覆盖已完赛结果，不改写球队强度、市场概率和体彩销售快照。
+这些数据都在本地代码中。自动赛程/赛果更新模式会用 ESPN 公共 scoreboard 补充已知球队的新赛程，并覆盖已完赛结果；它不改写球队强度、市场概率和体彩销售快照。
 
-### 1.1 自动赛果覆盖
+### 1.1 自动赛程/赛果覆盖
 
-启用 `--live-results espn` 后，生成器会拉取 ESPN 公共 scoreboard，按双方国家队缩写匹配本地赛程。写入页面时区分两种比分：
+启用 `--live-results espn` 后，生成器会拉取 ESPN 公共 scoreboard，按双方国家队缩写匹配本地赛程；如果 ESPN 返回了本地快照里还没有、但球队已在项目数据里的比赛，会自动追加为待赛项。写入页面时区分两种比分：
 
 - 竞彩结算比分：按 90 分钟常规时间计算，用于胜平负、比分、总进球、半全场等复盘命中率。
 - 最终赛果：保留加时、点球和晋级信息，用于页面展示。
@@ -164,13 +164,13 @@ sudo systemctl enable --now worldcup-prediction-update.timer
 
 - 这是研究和复盘工具，不保证赛果，不构成投注建议。
 - 默认数据是本地样例快照，不是官方实时数据源。
-- 自动更新只覆盖赛果；竞彩销售规则、赔率快照和赛程仍需要人工或后续数据源维护。
+- 自动更新可补充 ESPN 赛程和已完赛结果；竞彩销售规则、官方赔率快照和开售状态仍需要人工或后续数据源维护。
 
 ---
 
 # English
 
-Green Pitch Luloo is an offline-first World Cup prediction and football lottery calculator. It ships with local sample fixtures, team ratings, results, market snapshots and lottery sale snapshots. The Python worker generates static JSON, and the browser reads those local files only. By default no external API is required. If live result updates are enabled, the generator fetches ESPN public scoreboard data in the background and regenerates static JSON.
+Green Pitch Luloo is an offline-first World Cup prediction and football lottery calculator. It ships with local sample fixtures, team ratings, results, market snapshots and lottery sale snapshots. The Python worker generates static JSON, and the browser reads those local files only. By default no external API is required. If live fixture/result updates are enabled, the generator fetches ESPN public scoreboard data in the background and regenerates static JSON.
 
 ## Quick Start
 
@@ -204,14 +204,14 @@ http://127.0.0.1:8080
 
 The independent track estimates match strength from Elo, structural team rating, squad-value signal, venue context and stage context. Expected goals are converted into a Poisson score matrix with Dixon-Coles low-score correction. The blended track starts from the independent probabilities and applies bounded calibration from available market snapshots.
 
-Live result mode is optional:
+Live fixture/result mode is optional:
 
 ```bash
 python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn
 PUBLIC_TARGET=/path/to/public-web-root scripts/update_public.sh
 ```
 
-In live mode, completed matches are matched by national-team abbreviations. Lottery review uses regulation-time settlement scores, while the UI also keeps final score, extra-time, penalty and advancing-team metadata.
+In live mode, matches are matched by national-team abbreviations. ESPN fixtures not present in the local snapshot are appended when both teams are known to the project. Lottery review uses regulation-time settlement scores, while the UI also keeps final score, extra-time, penalty and advancing-team metadata. China Sports Lottery sales rules, official odds snapshots and sale availability still come from local snapshots unless a dedicated data source is added.
 
 Lottery markets are derived from the same probability layer:
 
