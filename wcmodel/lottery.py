@@ -201,10 +201,15 @@ ACTUAL_BY_MARKET = {
 def apply_lottery_sale(markets: Dict[str, Dict[str, object]], sale: Dict[str, object]) -> Dict[str, Dict[str, object]]:
     sale_markets = sale.get("markets", {}) if sale else {}
     for key, market in markets.items():
-        config = sale_markets.get(key, {})
-        market["sale"] = bool(config.get("sale", True))
-        market["supports_single"] = bool(config.get("supports_single", True))
-        market["supports_parlay"] = bool(config.get("supports_parlay", True))
+        config = sale_markets.get(key)
+        if not config:
+            market["sale"] = False
+            market["supports_single"] = False
+            market["supports_parlay"] = False
+            continue
+        market["sale"] = bool(config.get("sale", False))
+        market["supports_single"] = bool(config.get("supports_single", False))
+        market["supports_parlay"] = bool(config.get("supports_parlay", False))
         if "handicap_label" in config:
             market["handicap_label"] = config["handicap_label"]
         odds = config.get("odds", {})
@@ -245,6 +250,8 @@ def top_daily_recommendations(matches: Iterable[Dict[str, object]], target_date:
             continue
         markets = match.get("lottery") or china_lottery_markets(match)
         for key, market in markets.items():
+            if not market.get("sale"):
+                continue
             pick = market["pick"]
             score = float(pick["prob"]) * RISK_WEIGHT[key]
             candidates.append(

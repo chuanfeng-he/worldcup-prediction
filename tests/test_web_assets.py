@@ -52,6 +52,13 @@ def test_pending_prediction_cards_render_all_lottery_market_picks():
     assert "marketOrder.map((key) => renderPredictionMarket(match, key)).join" in app
 
 
+def test_closed_prediction_markets_do_not_display_fallback_odds():
+    app = (ROOT / "web" / "assets" / "app.js").read_text()
+
+    assert "const oddsText = market.sale" in app
+    assert "<p>${pct(pick.prob)} · ${oddsText}${handicap}</p>" in app
+
+
 def test_frontend_tolerates_stale_shell_without_optional_summary_nodes():
     app = (ROOT / "web" / "assets" / "app.js").read_text()
 

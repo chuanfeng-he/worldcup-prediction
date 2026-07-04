@@ -133,6 +133,7 @@ def _market_snapshots() -> Dict[str, Dict[str, float]]:
         "R16-20260704-1": decimal_odds_to_probs(2.35, 3.05, 3.25),
         "R16-20260704-2": decimal_odds_to_probs(1.28, 5.50, 12.00),
         "R16-20260704-3": decimal_odds_to_probs(1.88, 3.35, 4.45),
+        "ESPN-760502": decimal_odds_to_probs(5.60, 3.58, 1.49),
     }
 
 
@@ -239,6 +240,56 @@ def _lottery_sales() -> Dict[str, Dict[str, object]]:
                 "bf": {"sale": True, "supports_single": True, "supports_parlay": True, "odds": {}},
                 "jqs": {"sale": True, "supports_single": True, "supports_parlay": True, "odds": {}},
                 "bqc": {"sale": True, "supports_single": True, "supports_parlay": True, "odds": {}},
+            },
+        },
+        "ESPN-760502": {
+            "code": "周六089",
+            "competition": "世界杯",
+            "source": "用户提供体彩截图 2026-07-04",
+            "markets": {
+                "spf": {
+                    "sale": True,
+                    "handicap_label": "-",
+                    "supports_single": True,
+                    "supports_parlay": True,
+                    "odds": {"主胜": 5.60, "平局": 3.58, "客胜": 1.49},
+                },
+                "rqspf": {
+                    "sale": True,
+                    "handicap": 1,
+                    "handicap_label": "+1",
+                    "supports_single": False,
+                    "supports_parlay": True,
+                    "odds": {"主胜": 2.22, "平局": 2.80, "客胜": 3.11},
+                },
+                "bf": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
+                "jqs": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
+                "bqc": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
+            },
+        },
+        "ESPN-760503": {
+            "code": "周六090",
+            "competition": "世界杯",
+            "source": "用户提供体彩截图 2026-07-04",
+            "markets": {
+                "spf": {
+                    "sale": False,
+                    "handicap_label": "-",
+                    "supports_single": False,
+                    "supports_parlay": False,
+                    "odds": {},
+                },
+                "rqspf": {
+                    "sale": True,
+                    "handicap": 2,
+                    "handicap_label": "+2",
+                    "supports_single": True,
+                    "supports_parlay": True,
+                    "odds": {"主胜": 2.35, "平局": 3.33, "客胜": 2.48},
+                },
+                "bf": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
+                "jqs": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
+                "bqc": {"sale": False, "supports_single": False, "supports_parlay": False, "odds": {}},
             },
         },
     }

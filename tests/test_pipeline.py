@@ -5,6 +5,7 @@ import json
 import pytest
 
 from wcmodel.data import load_seed_data
+from wcmodel.live_results import apply_live_results
 from wcmodel.pipeline import generate_public_data
 from wcmodel.simulate import simulate_tournament
 
@@ -117,6 +118,60 @@ def test_lottery_sales_snapshot_tracks_daily_sale_rules(tmp_path):
 
     assert colombia["lottery_meta"]["code"] == "周五088"
     assert colombia["handicap"] == -1
+
+
+def test_live_appended_fixtures_use_verified_lottery_sales_snapshot(tmp_path):
+    seed = load_seed_data()
+    payload = {
+        "events": [
+            {
+                "id": "760502",
+                "date": "2026-07-04T17:00Z",
+                "season": {"slug": "round-of-16"},
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_SCHEDULED", "completed": False, "shortDetail": "Scheduled"}},
+                        "competitors": [
+                            {"homeAway": "home", "score": "0", "team": {"id": "206", "abbreviation": "CAN"}},
+                            {"homeAway": "away", "score": "0", "team": {"id": "2869", "abbreviation": "MAR"}},
+                        ],
+                    }
+                ],
+            },
+            {
+                "id": "760503",
+                "date": "2026-07-04T21:00Z",
+                "season": {"slug": "round-of-16"},
+                "competitions": [
+                    {
+                        "status": {"type": {"name": "STATUS_SCHEDULED", "completed": False, "shortDetail": "Scheduled"}},
+                        "competitors": [
+                            {"homeAway": "home", "score": "0", "team": {"id": "210", "abbreviation": "PAR"}},
+                            {"homeAway": "away", "score": "0", "team": {"id": "478", "abbreviation": "FRA"}},
+                        ],
+                    }
+                ],
+            },
+        ]
+    }
+
+    updated, report = apply_live_results(seed, fetcher=lambda date: payload, now_iso="2026-07-04T02:00:00Z")
+    generate_public_data(updated, tmp_path, n_sims=50, seed=11, live_result_report=report)
+    matches = json.loads((tmp_path / "matches.json").read_text())["matches"]
+
+    canada = next(item for item in matches if item["match_id"] == "ESPN-760502")
+    paraguay = next(item for item in matches if item["match_id"] == "ESPN-760503")
+
+    assert canada["lottery_meta"]["code"] == "周六089"
+    assert canada["handicap"] == 1
+    assert [item.get("listed_odds") for item in canada["lottery"]["spf"]["options"]] == [5.60, 3.58, 1.49]
+    assert [item.get("listed_odds") for item in canada["lottery"]["rqspf"]["options"]] == [2.22, 2.80, 3.11]
+
+    assert paraguay["lottery_meta"]["code"] == "周六090"
+    assert paraguay["lottery"]["spf"]["sale"] is False
+    assert paraguay["handicap"] == 2
+    assert paraguay["lottery"]["rqspf"]["sale"] is True
+    assert [item.get("listed_odds") for item in paraguay["lottery"]["rqspf"]["options"]] == [2.35, 3.33, 2.48]
 
 
 def test_simulation_is_seed_reproducible_and_locks_completed_results():

@@ -2,6 +2,7 @@ import pytest
 
 from wcmodel.data import load_seed_data
 from wcmodel.lottery import (
+    apply_lottery_sale,
     china_lottery_markets,
     estimate_slip,
     historical_success,
@@ -50,6 +51,28 @@ def test_daily_recommendations_are_limited_to_uncompleted_target_date():
     assert all(item["date"] == "2026-07-04" for item in recommendations)
     assert all(item["completed"] is False for item in recommendations)
     assert recommendations == sorted(recommendations, key=lambda item: item["model_score"], reverse=True)
+
+
+def test_daily_recommendations_skip_closed_lottery_markets():
+    seed = load_seed_data()
+    match = prediction_for_fixture(seed, seed.fixtures[-1])
+    for market in match["lottery"].values():
+        market["sale"] = False
+
+    recommendations = top_daily_recommendations([match], target_date=str(match["kickoff"])[:10], limit=3)
+
+    assert recommendations == []
+
+
+def test_missing_lottery_sale_snapshot_closes_markets_by_default():
+    seed = load_seed_data()
+    match = prediction_for_fixture(seed, seed.fixtures[0])
+
+    markets = apply_lottery_sale(china_lottery_markets(match), {})
+
+    assert all(market["sale"] is False for market in markets.values())
+    assert all(market["supports_single"] is False for market in markets.values())
+    assert all(market["supports_parlay"] is False for market in markets.values())
 
 
 def test_historical_success_reports_hit_rate_for_resolvable_markets():

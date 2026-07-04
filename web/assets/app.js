@@ -784,11 +784,14 @@ function renderPredictionMarket(match, key) {
   const odds = displayOdds(pick);
   const status = market.sale ? saleTags(market).join(" / ") : t("saleUnavailable");
   const handicap = key === "rqspf" ? ` · ${t("handicap")} ${match.handicap > 0 ? "+" : ""}${match.handicap}` : "";
+  const oddsText = market.sale
+    ? `${pick.listed_odds ? t("listedOdds") : t("fairOdds")} ${odds.toFixed(2)}`
+    : t("saleUnavailable");
   return `
     <section class="market-card prediction-market ${market.sale ? "" : "unavailable"}">
       <span class="market-code">${escapeHtml(marketShortLabel(key))}</span>
       <strong>${t("prediction")}：${escapeHtml(optionLabel(pick.label))}</strong>
-      <p>${pct(pick.prob)} · ${pick.listed_odds ? t("listedOdds") : t("fairOdds")} ${odds.toFixed(2)}${escapeHtml(handicap)}</p>
+      <p>${pct(pick.prob)} · ${oddsText}${handicap}</p>
       <em>${escapeHtml(status || t("displayOnly"))}</em>
     </section>
   `;
