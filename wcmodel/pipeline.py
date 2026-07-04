@@ -87,6 +87,7 @@ def prediction_for_fixture(seed_data: SeedData, fixture: Dict[str, object]) -> D
         "code": sale_snapshot.get("code"),
         "competition": sale_snapshot.get("competition"),
         "source": sale_snapshot.get("source"),
+        "source_updated_at": sale_snapshot.get("source_updated_at"),
     }
     match["lottery"] = apply_lottery_sale(china_lottery_markets(match), sale_snapshot)
     if match["completed"]:
@@ -102,6 +103,7 @@ def generate_public_data(
     n_sims: int = 5000,
     seed_value: int = 2026,
     live_result_report: Optional[Dict[str, object]] = None,
+    live_lottery_report: Optional[Dict[str, object]] = None,
     **kwargs,
 ) -> Dict[str, object]:
     if "seed" in kwargs:
@@ -134,8 +136,9 @@ def generate_public_data(
         "model_version": MODEL_VERSION,
         "generated_at": generated_at,
         "data_available_at": seed_data.as_of,
-        "mode": "offline_static_local_with_live_results" if live_result_report else "offline_static_local",
+        "mode": "offline_static_local_with_live_data" if live_result_report or live_lottery_report else "offline_static_local",
         "live_results": live_result_report,
+        "live_lottery": live_lottery_report,
         "tracks": ["independent", "accuracy"],
         "cache_policy": CACHE_POLICY,
         "locked_results_applied": sim.locked_results_applied,

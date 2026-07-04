@@ -12,6 +12,7 @@ from wcmodel.data import load_seed_data
 from wcmodel.live_results import apply_live_results
 from wcmodel.model import MatchContext, match_prediction
 from wcmodel.pipeline import generate_public_data
+from wcmodel.sporttery_lottery import apply_sporttery_lottery
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WEB_ROOT = PROJECT_ROOT / "web"
@@ -26,9 +27,13 @@ def _copy_web_assets(public_root: Path) -> None:
 def generate(args: argparse.Namespace) -> None:
     seed = load_seed_data()
     live_result_report = None
+    live_lottery_report = None
     live_results = getattr(args, "live_results", "none")
     if live_results == "espn":
         seed, live_result_report = apply_live_results(seed)
+    live_lottery = getattr(args, "live_lottery", "none")
+    if live_lottery == "sporttery":
+        seed, live_lottery_report = apply_sporttery_lottery(seed)
     _copy_web_assets(PUBLIC_ROOT)
     data_dir = PUBLIC_ROOT / "data"
     summary = generate_public_data(
@@ -37,6 +42,7 @@ def generate(args: argparse.Namespace) -> None:
         n_sims=args.sims,
         seed_value=args.seed,
         live_result_report=live_result_report,
+        live_lottery_report=live_lottery_report,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
 
@@ -60,7 +66,7 @@ def predict(args: argparse.Namespace) -> None:
 
 def serve(args: argparse.Namespace) -> None:
     if not (PUBLIC_ROOT / "index.html").exists():
-        generate(argparse.Namespace(sims=args.sims, seed=args.seed, live_results=args.live_results))
+        generate(argparse.Namespace(sims=args.sims, seed=args.seed, live_results=args.live_results, live_lottery=args.live_lottery))
     handler = partial(SimpleHTTPRequestHandler, directory=str(PUBLIC_ROOT))
     server = ThreadingHTTPServer((args.host, args.port), handler)
     print(f"Serving http://{args.host}:{args.port} from {PUBLIC_ROOT}")
@@ -80,6 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_cmd.add_argument("--sims", type=int, default=5000)
     generate_cmd.add_argument("--seed", type=int, default=2026)
     generate_cmd.add_argument("--live-results", choices=("none", "espn"), default="none")
+    generate_cmd.add_argument("--live-lottery", choices=("none", "sporttery"), default="none")
     generate_cmd.set_defaults(func=generate)
 
     predict_cmd = sub.add_parser("predict-match", help="Predict a single match by team name")
@@ -95,6 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_cmd.add_argument("--sims", type=int, default=2000)
     serve_cmd.add_argument("--seed", type=int, default=2026)
     serve_cmd.add_argument("--live-results", choices=("none", "espn"), default="none")
+    serve_cmd.add_argument("--live-lottery", choices=("none", "sporttery"), default="none")
     serve_cmd.set_defaults(func=serve)
 
     return parser

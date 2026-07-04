@@ -1,6 +1,6 @@
 # 绿茵神噜 / Green Pitch Luloo
 
-离线优先的世界杯预测与竞彩玩法测算网页。项目内置样例赛程、球队强度、赛果、市场快照和体彩销售快照；运行时先生成静态 JSON，浏览器只读取本地文件。默认模式不调用外部接口；如果启用自动赛程/赛果更新，生成器会在后台拉取 ESPN 公共 scoreboard 数据并重新生成静态 JSON。
+离线优先的世界杯预测与竞彩玩法测算网页。项目内置样例赛程、球队强度、赛果、市场快照和体彩销售快照；运行时先生成静态 JSON，浏览器只读取本地文件。默认模式不调用外部接口；如果启用自动更新，生成器会在后台拉取 ESPN 公共 scoreboard 和中国竞彩网计算器数据并重新生成静态 JSON。
 
 ![绿茵神噜主界面](docs/assets/home.png)
 
@@ -61,10 +61,10 @@ python3 -m wcmodel.cli serve --host 127.0.0.1 --port 8080
 
 ## 自动赛程/赛果更新
 
-默认 `make generate` 只使用本地快照，结果稳定且可离线复现。需要自动更新赛程和赛果时，使用：
+默认 `make generate` 只使用本地快照，结果稳定且可离线复现。需要自动更新赛程、赛果和中国竞彩网实时赔率时，使用：
 
 ```bash
-python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn
+python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn --live-lottery sporttery
 ```
 
 或直接运行脚本：
@@ -103,8 +103,7 @@ sudo systemctl enable --now worldcup-prediction-update.timer
 - 市场概率快照：用于综合轨的有限校准。
 - 体彩销售快照：用于让球、开售状态、单场/过关规则和票面赔率展示。
 
-这些数据都在本地代码中。自动赛程/赛果更新模式会用 ESPN 公共 scoreboard 补充已知球队的新赛程，并覆盖已完赛结果；它不改写球队强度、市场概率和体彩销售快照。
-没有体彩销售快照的玩法默认视为未开售，不进入计算器和候选推荐，避免把模型兜底赔率误当成官方票面赔率。
+这些数据都在本地代码中。自动赛程/赛果更新模式会用 ESPN 公共 scoreboard 补充已知球队的新赛程，并覆盖已完赛结果；自动体彩模式会用中国竞彩网计算器接口覆盖胜平负、让球胜平负、比分、总进球和半全场的开售状态、单关/过关状态和票面赔率。没有体彩销售快照的玩法默认视为未开售，不进入计算器和候选推荐，避免把模型兜底赔率误当成官方票面赔率。
 
 ### 1.1 自动赛程/赛果覆盖
 
@@ -165,13 +164,13 @@ sudo systemctl enable --now worldcup-prediction-update.timer
 
 - 这是研究和复盘工具，不保证赛果，不构成投注建议。
 - 默认数据是本地样例快照，不是官方实时数据源。
-- 自动更新可补充 ESPN 赛程和已完赛结果；竞彩销售规则、官方赔率快照和开售状态仍需要人工或后续数据源维护。
+- 自动更新可补充 ESPN 赛程、已完赛结果和中国竞彩网计算器返回的实时赔率；如果实时源不可用，服务器更新任务会失败并保留上一次成功发布的静态数据。
 
 ---
 
 # English
 
-Green Pitch Luloo is an offline-first World Cup prediction and football lottery calculator. It ships with local sample fixtures, team ratings, results, market snapshots and lottery sale snapshots. The Python worker generates static JSON, and the browser reads those local files only. By default no external API is required. If live fixture/result updates are enabled, the generator fetches ESPN public scoreboard data in the background and regenerates static JSON.
+Green Pitch Luloo is an offline-first World Cup prediction and football lottery calculator. It ships with local sample fixtures, team ratings, results, market snapshots and lottery sale snapshots. The Python worker generates static JSON, and the browser reads those local files only. By default no external API is required. If live updates are enabled, the generator fetches ESPN public scoreboard data and Sporttery calculator odds in the background, then regenerates static JSON.
 
 ## Quick Start
 
@@ -205,14 +204,14 @@ http://127.0.0.1:8080
 
 The independent track estimates match strength from Elo, structural team rating, squad-value signal, venue context and stage context. Expected goals are converted into a Poisson score matrix with Dixon-Coles low-score correction. The blended track starts from the independent probabilities and applies bounded calibration from available market snapshots.
 
-Live fixture/result mode is optional:
+Live fixture/result and lottery-odds mode is optional:
 
 ```bash
-python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn
+python3 -m wcmodel.cli generate --sims 5000 --seed 2026 --live-results espn --live-lottery sporttery
 PUBLIC_TARGET=/path/to/public-web-root scripts/update_public.sh
 ```
 
-In live mode, matches are matched by national-team abbreviations. ESPN fixtures not present in the local snapshot are appended when both teams are known to the project. Lottery review uses regulation-time settlement scores, while the UI also keeps final score, extra-time, penalty and advancing-team metadata. China Sports Lottery sales rules, official odds snapshots and sale availability still come from local snapshots unless a dedicated data source is added.
+In live mode, matches are matched by national-team abbreviations and Chinese team names plus kickoff time. ESPN fixtures not present in the local snapshot are appended when both teams are known to the project. Sporttery calculator data updates sale availability, single/parlay flags and listed odds for 1X2, handicap 1X2, correct score, total goals and HT/FT. Lottery review uses regulation-time settlement scores, while the UI also keeps final score, extra-time, penalty and advancing-team metadata.
 
 Lottery markets are derived from the same probability layer:
 

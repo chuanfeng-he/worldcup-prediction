@@ -8,7 +8,7 @@ SEED="${SEED:-2026}"
 PUBLIC_TARGET="${PUBLIC_TARGET:-}"
 
 cd "${PROJECT_ROOT}"
-python3 -m wcmodel.cli generate --sims "${SIMS}" --seed "${SEED}" --live-results espn
+python3 -m wcmodel.cli generate --sims "${SIMS}" --seed "${SEED}" --live-results espn --live-lottery sporttery
 
 if [[ -n "${PUBLIC_TARGET}" ]]; then
   mkdir -p "${PUBLIC_TARGET}"

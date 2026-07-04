@@ -328,9 +328,9 @@ def test_generate_cli_can_apply_espn_live_results(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "_copy_web_assets", lambda public_root: public_root.mkdir(parents=True, exist_ok=True))
     monkeypatch.setattr(cli, "apply_live_results", fake_apply_live_results)
 
-    cli.generate(argparse.Namespace(sims=50, seed=11, live_results="espn"))
+    cli.generate(argparse.Namespace(sims=50, seed=11, live_results="espn", live_lottery="none"))
 
     status = json.loads((tmp_path / "public" / "data" / "model_status.json").read_text())
     assert called["live"] is True
-    assert status["mode"] == "offline_static_local_with_live_results"
+    assert status["mode"] == "offline_static_local_with_live_data"
     assert status["live_results"]["source"] == "espn"

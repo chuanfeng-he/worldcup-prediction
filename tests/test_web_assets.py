@@ -79,5 +79,6 @@ def test_live_update_script_generates_and_publishes_static_site():
     script = (ROOT / "scripts" / "update_public.sh").read_text()
 
     assert "--live-results espn" in script
+    assert "--live-lottery sporttery" in script
     assert "PUBLIC_TARGET" in script
     assert "rsync -a --delete" in script
