@@ -293,7 +293,13 @@ def apply_live_results(
     now_iso: Optional[str] = None,
 ) -> Tuple[SeedData, Dict[str, object]]:
     fetched_dates = _scoreboard_dates(seed_data.fixtures, now_iso=now_iso)
-    payloads = [fetcher(date_text) for date_text in fetched_dates]
+    payloads: List[Dict[str, object]] = []
+    failed_dates: List[Dict[str, str]] = []
+    for date_text in fetched_dates:
+        try:
+            payloads.append(fetcher(date_text))
+        except Exception as exc:
+            failed_dates.append({"date": date_text, "error": str(exc)})
     events = _event_index(payloads)
     updated_fixtures: List[Dict[str, object]] = []
     applied: List[str] = []
@@ -338,5 +344,6 @@ def apply_live_results(
         "applied_match_ids": applied,
         "appended_count": len(appended),
         "appended_match_ids": appended,
+        "failed_dates": failed_dates,
     }
     return replace(seed_data, fixtures=updated_fixtures, as_of=_beijing_iso(fetched_at)), report

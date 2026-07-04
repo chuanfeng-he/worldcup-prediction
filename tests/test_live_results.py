@@ -163,6 +163,25 @@ def test_apply_live_results_appends_known_espn_scheduled_fixtures():
     assert france["kickoff"] == "2026-07-05T05:00:00+08:00"
 
 
+def test_apply_live_results_continues_when_one_scoreboard_date_fails():
+    seed = load_seed_data()
+    payload = {
+        "events": [
+            _scheduled_event("760502", "2026-07-04T17:00Z", "206", "CAN", "2869", "MAR"),
+        ]
+    }
+
+    def fetcher(date_text):
+        if date_text == "20260703":
+            raise TimeoutError("temporary ESPN timeout")
+        return payload
+
+    updated, report = apply_live_results(seed, fetcher=fetcher, now_iso="2026-07-04T02:00:00Z")
+
+    assert any(item["match_id"] == "ESPN-760502" for item in updated.fixtures)
+    assert report["failed_dates"] == [{"date": "20260703", "error": "temporary ESPN timeout"}]
+
+
 def test_generated_daily_predictions_use_appended_future_fixtures(tmp_path):
     seed = load_seed_data()
     payload = {

@@ -80,7 +80,8 @@ def fetch_sporttery_calculator(timeout: int = 12) -> Dict[str, object]:
     request = urllib.request.Request(
         SPORTTERY_CALCULATOR_URL,
         headers={
-            "User-Agent": "Mozilla/5.0 wc26-forecast-web/0.1",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36",
+            "Accept": "application/json,text/plain,*/*",
             "Referer": "https://www.sporttery.cn/jc/jsq/zqspf/",
         },
     )
