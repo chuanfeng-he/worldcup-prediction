@@ -302,6 +302,10 @@ const i18n = {
     lowRisk: "低风险",
     risk: "风险",
     completed: "完赛",
+    settlementScore: "竞彩结算",
+    finalScore: "最终",
+    shootoutScore: "点球",
+    advanceTeam: "晋级",
     prematchPick: "模型赛前首选",
     hit: "命中",
     missActual: "未命中，实际",
@@ -399,6 +403,10 @@ const i18n = {
     lowRisk: "Low risk",
     risk: "risk",
     completed: "Final",
+    settlementScore: "Lottery settlement",
+    finalScore: "Final",
+    shootoutScore: "Pens",
+    advanceTeam: "Advance",
     prematchPick: "Pre-match top pick",
     hit: "Hit",
     missActual: "Miss, actual",
@@ -651,11 +659,40 @@ function resultLabelFromGoals(homeGoals, awayGoals) {
   return "平局";
 }
 
+function scoreText(score) {
+  if (!score) return "";
+  return `${score.home_goals}-${score.away_goals}`;
+}
+
+function teamLabelForMatch(match, teamId) {
+  if (match.home.team_id === teamId) return teamName(match.home);
+  if (match.away.team_id === teamId) return teamName(match.away);
+  return teamId;
+}
+
+function liveResultNote(match) {
+  const live = match.live_result;
+  if (!live) return "";
+  const settlement = scoreText(live.settlement_score);
+  const final = scoreText(live.final_score);
+  const parts = [];
+  if (settlement) parts.push(`${t("settlementScore")} ${settlement}`);
+  if (final && final !== settlement) {
+    parts.push(`${t("finalScore")} ${final}${live.status_detail ? ` ${live.status_detail}` : ""}`);
+  } else if (live.status_detail) {
+    parts.push(live.status_detail);
+  }
+  if (live.shootout_score) parts.push(`${t("shootoutScore")} ${scoreText(live.shootout_score)}`);
+  if (live.advance) parts.push(`${t("advanceTeam")} ${teamLabelForMatch(match, live.advance)}`);
+  return parts.join(" · ");
+}
+
 function renderReviewCard(match) {
   const probs = probsFor(match);
   const [pickLabel, pickValue] = topOutcome(probs);
   const actualLabel = resultLabelFromGoals(match.result.home_goals, match.result.away_goals);
   const hit = pickLabel === actualLabel;
+  const liveNote = liveResultNote(match);
   return `
     <article class="daily-card review-card">
       <header class="daily-card-head">
@@ -670,6 +707,7 @@ function renderReviewCard(match) {
         <div class="result-score">
           <span>${t("completed")}</span>
           <strong>${match.result.home_goals}-${match.result.away_goals}</strong>
+          ${liveNote ? `<em>${escapeHtml(liveNote)}</em>` : ""}
         </div>
       </header>
       <div class="review-line ${hit ? "hit" : "miss"}">

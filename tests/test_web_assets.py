@@ -57,3 +57,20 @@ def test_frontend_tolerates_stale_shell_without_optional_summary_nodes():
 
     assert 'const matchCount = $("#slipMatchCount");' in app
     assert "if (matchCount)" in app
+
+
+def test_review_cards_distinguish_lottery_settlement_from_final_score():
+    app = (ROOT / "web" / "assets" / "app.js").read_text()
+
+    assert "liveResultNote(match)" in app
+    assert "settlementScore" in app
+    assert "finalScore" in app
+    assert "advanceTeam" in app
+
+
+def test_live_update_script_generates_and_publishes_static_site():
+    script = (ROOT / "scripts" / "update_public.sh").read_text()
+
+    assert "--live-results espn" in script
+    assert "PUBLIC_TARGET" in script
+    assert "rsync -a --delete" in script

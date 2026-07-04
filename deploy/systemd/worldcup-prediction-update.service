@@ -1,0 +1,12 @@
+[Unit]
+Description=Update Green Pitch Luloo static forecast data
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/worldcup-prediction
+Environment=PUBLIC_TARGET=/var/www/worldcup-prediction
+Environment=SIMS=5000
+Environment=SEED=2026
+ExecStart=/opt/worldcup-prediction/scripts/update_public.sh

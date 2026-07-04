@@ -91,12 +91,23 @@ def prediction_for_fixture(seed_data: SeedData, fixture: Dict[str, object]) -> D
     match["lottery"] = apply_lottery_sale(china_lottery_markets(match), sale_snapshot)
     if match["completed"]:
         match["lottery_review"] = lottery_review(match)
+    if fixture.get("live_result"):
+        match["live_result"] = fixture["live_result"]
     return match
 
 
-def generate_public_data(seed_data: SeedData, output_dir: Path, n_sims: int = 5000, seed_value: int = 2026, **kwargs) -> Dict[str, object]:
+def generate_public_data(
+    seed_data: SeedData,
+    output_dir: Path,
+    n_sims: int = 5000,
+    seed_value: int = 2026,
+    live_result_report: Optional[Dict[str, object]] = None,
+    **kwargs,
+) -> Dict[str, object]:
     if "seed" in kwargs:
         seed_value = int(kwargs["seed"])
+    if "live_result_report" in kwargs and live_result_report is None:
+        live_result_report = kwargs["live_result_report"]
 
     generated_at = _now_iso()
     sim = simulate_tournament(seed_data, n_sims=n_sims, seed=seed_value)
@@ -123,7 +134,8 @@ def generate_public_data(seed_data: SeedData, output_dir: Path, n_sims: int = 50
         "model_version": MODEL_VERSION,
         "generated_at": generated_at,
         "data_available_at": seed_data.as_of,
-        "mode": "offline_static_local",
+        "mode": "offline_static_local_with_live_results" if live_result_report else "offline_static_local",
+        "live_results": live_result_report,
         "tracks": ["independent", "accuracy"],
         "cache_policy": CACHE_POLICY,
         "locked_results_applied": sim.locked_results_applied,
