@@ -1,11 +1,12 @@
 import json
+import urllib.error
 from pathlib import Path
 import argparse
 
 from wcmodel.data import load_seed_data
 from wcmodel.live_results import apply_live_results
 from wcmodel.pipeline import generate_public_data
-from wcmodel.sporttery_lottery import apply_sporttery_lottery
+from wcmodel.sporttery_lottery import apply_sporttery_lottery, fetch_sporttery_calculator
 
 
 def _scheduled_event(event_id, date, home_team_id, home, away_team_id, away):
@@ -156,3 +157,66 @@ def test_generate_cli_can_apply_sporttery_live_lottery(monkeypatch, tmp_path):
     assert called["lottery"] is True
     assert status["mode"] == "offline_static_local_with_live_data"
     assert status["live_lottery"]["source"] == "sporttery"
+
+
+def test_generate_cli_degrades_when_sporttery_live_lottery_is_unavailable(monkeypatch, tmp_path):
+    from wcmodel import cli
+
+    def fake_apply_sporttery_lottery(seed):
+        raise RuntimeError("sporttery live lottery returned non-json response: text/html")
+
+    monkeypatch.setattr(cli, "PUBLIC_ROOT", tmp_path / "public")
+    monkeypatch.setattr(cli, "_copy_web_assets", lambda public_root: public_root.mkdir(parents=True, exist_ok=True))
+    monkeypatch.setattr(cli, "apply_sporttery_lottery", fake_apply_sporttery_lottery)
+
+    cli.generate(argparse.Namespace(sims=50, seed=11, live_results="none", live_lottery="sporttery"))
+
+    status = json.loads((tmp_path / "public" / "data" / "model_status.json").read_text())
+    assert status["mode"] == "offline_static_local_with_live_data"
+    assert status["live_lottery"]["source"] == "sporttery"
+    assert status["live_lottery"]["applied_count"] == 0
+    assert "non-json response" in status["live_lottery"]["error"]
+
+
+def test_sporttery_fetcher_rejects_non_json_response(monkeypatch):
+    class FakeHeaders:
+        def get(self, key, default=None):
+            return "text/html" if key == "content-type" else default
+
+    class FakeResponse:
+        status = 200
+        headers = FakeHeaders()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b"        <script>var seqid = 'challenge';</script>"
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda request, timeout: FakeResponse())
+
+    try:
+        fetch_sporttery_calculator()
+    except RuntimeError as exc:
+        assert "non-json response" in str(exc)
+        assert "text/html" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+
+def test_sporttery_fetcher_wraps_url_errors(monkeypatch):
+    def raise_url_error(request, timeout):
+        raise urllib.error.URLError("timed out")
+
+    monkeypatch.setattr("urllib.request.urlopen", raise_url_error)
+
+    try:
+        fetch_sporttery_calculator()
+    except RuntimeError as exc:
+        assert "request failed" in str(exc)
+        assert "timed out" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")

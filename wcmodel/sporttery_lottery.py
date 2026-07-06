@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import urllib.error
 import urllib.request
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -85,8 +86,23 @@ def fetch_sporttery_calculator(timeout: int = 12) -> Dict[str, object]:
             "Referer": "https://www.sporttery.cn/jc/jsq/zqspf/",
         },
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            body = response.read().decode("utf-8", "replace")
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError as exc:
+                content_type = response.headers.get("content-type", "")
+                snippet = " ".join(body[:160].split())
+                raise RuntimeError(
+                    f"sporttery live lottery returned non-json response: "
+                    f"status={response.status}, content_type={content_type}, body={snippet!r}"
+                ) from exc
+            if not isinstance(payload, dict):
+                raise RuntimeError(f"sporttery live lottery returned unexpected payload type: {type(payload).__name__}")
+            return payload
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"sporttery live lottery request failed: {exc}") from exc
 
 
 def _utc_iso() -> str:

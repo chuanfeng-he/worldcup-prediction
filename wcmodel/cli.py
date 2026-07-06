@@ -24,6 +24,19 @@ def _copy_web_assets(public_root: Path) -> None:
     shutil.copytree(WEB_ROOT, public_root, dirs_exist_ok=True)
 
 
+def _live_lottery_error_report(error: Exception) -> dict[str, object]:
+    return {
+        "source": "sporttery",
+        "fetched_at": None,
+        "source_updated_at": None,
+        "applied_count": 0,
+        "applied_match_ids": [],
+        "unmatched_count": 0,
+        "unmatched": [],
+        "error": str(error),
+    }
+
+
 def generate(args: argparse.Namespace) -> None:
     seed = load_seed_data()
     live_result_report = None
@@ -33,7 +46,10 @@ def generate(args: argparse.Namespace) -> None:
         seed, live_result_report = apply_live_results(seed)
     live_lottery = getattr(args, "live_lottery", "none")
     if live_lottery == "sporttery":
-        seed, live_lottery_report = apply_sporttery_lottery(seed)
+        try:
+            seed, live_lottery_report = apply_sporttery_lottery(seed)
+        except RuntimeError as exc:
+            live_lottery_report = _live_lottery_error_report(exc)
     _copy_web_assets(PUBLIC_ROOT)
     data_dir = PUBLIC_ROOT / "data"
     summary = generate_public_data(
