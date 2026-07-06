@@ -14,6 +14,17 @@ def test_index_uses_cache_busted_frontend_assets():
     assert '/assets/football-terminal.svg?v=' in html
 
 
+def test_index_promotes_github_star_link():
+    html = (ROOT / "web" / "index.html").read_text()
+    styles = (ROOT / "web" / "assets" / "styles.css").read_text()
+
+    assert "免费的 star" in html
+    assert "感谢各位球星" in html
+    assert "https://github.com/chuanfeng-he/worldcup-prediction" in html
+    assert 'class="star-banner"' in html
+    assert ".star-banner" in styles
+
+
 def test_frontend_exposes_chinese_english_language_switch():
     html = (ROOT / "web" / "index.html").read_text()
     app = (ROOT / "web" / "assets" / "app.js").read_text()

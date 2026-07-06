@@ -68,6 +68,39 @@ p {
   z-index: 1;
 }
 
+.star-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px clamp(14px, 3vw, 34px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 44, 0.20), rgba(214, 74, 47, 0.16)),
+    var(--field);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.star-banner a {
+  color: #fff4bf;
+  font-weight: 950;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 244, 191, 0.62);
+}
+
+.star-banner a:hover,
+.star-banner a:focus-visible {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
 .terminal-head {
   display: grid;
   gap: 18px;
